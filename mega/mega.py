@@ -88,7 +88,7 @@ class Mega(object):
             privk = a32_to_str(rsa_priv_key)
             self.rsa_priv_key = [0, 0, 0, 0]
 
-            for i in xrange(4):
+            for i in range(4):
                 l = ((ord(privk[0]) * 256 + ord(privk[1]) + 7) / 8) + 2
                 self.rsa_priv_key[i] = mpi2int(privk[:l])
                 privk = privk[l:]
@@ -96,7 +96,7 @@ class Mega(object):
             enc_sid = mpi2int(base64urldecode(res['csid']))
             decrypter = RSA.construct(
                 (self.rsa_priv_key[0] * self.rsa_priv_key[1],
-                 0L,
+                 0,
                  self.rsa_priv_key[2],
                  self.rsa_priv_key[0],
                  self.rsa_priv_key[1]))
@@ -173,7 +173,7 @@ class Mega(object):
             outfile.write(chunk)
 
             chunk_mac = [iv[0], iv[1], iv[0], iv[1]]
-            for i in xrange(0, len(chunk), 16):
+            for i in range(0, len(chunk), 16):
                 block = chunk[i:i+16]
                 if len(block) % 16:
                     block += '\0' * (16 - (len(block) % 16))
@@ -213,7 +213,7 @@ class Mega(object):
         size = os.path.getsize(filename)
         ul_url = self.api_req({'a': 'u', 's': size})['p']
 
-        ul_key = [random.randint(0, 0xFFFFFFFF) for _ in xrange(6)]
+        ul_key = [random.randint(0, 0xFFFFFFFF) for _ in range(6)]
         counter = Counter.new(
             128, initial_value=((ul_key[4] << 32) + ul_key[5]) << 64)
         encryptor = AES.new(
@@ -226,7 +226,7 @@ class Mega(object):
             chunk = infile.read(chunk_size)
 
             chunk_mac = [ul_key[4], ul_key[5], ul_key[4], ul_key[5]]
-            for i in xrange(0, len(chunk), 16):
+            for i in range(0, len(chunk), 16):
                 block = chunk[i:i+16]
                 if len(block) % 16:
                     block += '\0' * (16 - len(block) % 16)
