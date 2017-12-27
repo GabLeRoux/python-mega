@@ -89,7 +89,9 @@ class Mega(object):
             self.rsa_priv_key = [0, 0, 0, 0]
 
             for i in range(4):
-                l = ((ord(privk[0]) * 256 + ord(privk[1]) + 7) / 8) + 2
+                # Use floor division (//) instead of division. Maybe
+                # make this more explicit
+                l = ((privk[0] * 256 + privk[1] + 7) // 8) + 2
                 self.rsa_priv_key[i] = mpi2int(privk[:l])
                 privk = privk[l:]
 
@@ -229,7 +231,7 @@ class Mega(object):
             for i in range(0, len(chunk), 16):
                 block = chunk[i:i+16]
                 if len(block) % 16:
-                    block += '\0' * (16 - len(block) % 16)
+                    block += b'\0' * (16 - len(block) % 16)
                 block = str_to_a32(block)
                 chunk_mac = [chunk_mac[0] ^ block[0],
                              chunk_mac[1] ^ block[1],
@@ -246,7 +248,11 @@ class Mega(object):
             chunk = encryptor.encrypt(chunk)
             url = '%s/%s' % (ul_url, str(chunk_start))
             outfile = requests.post(url, data=chunk, stream=True).raw
-            completion_handle = outfile.read()
+            
+            # assumme utf-8 encoding. Maybe this entire section can be simplified
+            # by not looking at the raw output
+            # (http://docs.python-requests.org/en/master/user/advanced/#body-content-workflow)
+            completion_handle = outfile.read().decode('utf-8')
         infile.close()
 
         meta_mac = (file_mac[0] ^ file_mac[1], file_mac[2] ^ file_mac[3])

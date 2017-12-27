@@ -66,5 +66,7 @@ def enc_attr(attr, key):
 
 
 def dec_attr(attr, key):
-    attr = aes_cbc_decrypt(attr, a32_to_str(key)).rstrip('\0')
+    s = a32_to_str(key)
+    dec = aes_cbc_decrypt(attr, s).decode('utf-8')
+    attr = dec.rstrip('\0')
     return json.loads(attr[4:])
