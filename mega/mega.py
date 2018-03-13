@@ -3,6 +3,7 @@ import os
 import json
 import random
 import binascii
+from pprint import pprint
 
 import requests
 from urlobject import URLObject
@@ -10,11 +11,11 @@ from Crypto.Cipher import AES
 from Crypto.PublicKey import RSA
 from Crypto.Util import Counter
 
-from crypto import prepare_key, stringhash, encrypt_key, decrypt_key,\
+from mega.crypto import prepare_key, stringhash, encrypt_key, decrypt_key,\
     enc_attr, dec_attr, aes_cbc_encrypt_a32
-from utils import a32_to_str, str_to_a32, a32_to_base64, base64_to_a32,\
+from mega.utils import a32_to_str, str_to_a32, a32_to_base64, base64_to_a32,\
     mpi2int, base64urlencode, base64urldecode, get_chunks
-from exceptions import MegaRequestException, MegaIncorrectPasswordExcetion
+from mega.exceptions import MegaRequestException, MegaIncorrectPasswordExcetion
 
 
 class Mega(object):
@@ -141,12 +142,13 @@ class Mega(object):
         file_id, file_key = url_object.fragment[1:].split('!')
         self.download_file(file_id, file_key, public=True)
 
-    def download_file(self, file_id, file_key, public=False):
+    def download_file(self, file_id, file_key, public=False, store_path=None):
         if public:
             file_key = base64_to_a32(file_key)
             file_data = self.api_req({'a': 'g', 'g': 1, 'p': file_id})
         else:
-            file_data = self.api_req({'a': 'g', 'g': 1, 'n': file_id})
+            d = {'a': 'g', 'g': 1, 'n': file_id}
+            file_data = self.api_req(d)
 
         k = (file_key[0] ^ file_key[4],
              file_key[1] ^ file_key[5],
@@ -162,7 +164,10 @@ class Mega(object):
         file_name = attributes['n']
 
         infile = requests.get(file_url, stream=True).raw
+        if store_path:
+            file_name = os.path.join(store_path, file_name)
         outfile = open(file_name, 'wb')
+           
 
         counter = Counter.new(
             128, initial_value=((iv[0] << 32) + iv[1]) << 64)
@@ -178,7 +183,7 @@ class Mega(object):
             for i in range(0, len(chunk), 16):
                 block = chunk[i:i+16]
                 if len(block) % 16:
-                    block += '\0' * (16 - (len(block) % 16))
+                    block += b'\0' * (16 - (len(block) % 16))
                 block = str_to_a32(block)
                 chunk_mac = [
                     chunk_mac[0] ^ block[0],
